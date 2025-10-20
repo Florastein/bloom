@@ -1,4 +1,4 @@
-package com.example.bloom
+package com.cadmil.bloom
 
 import io.flutter.embedding.android.FlutterActivity
 

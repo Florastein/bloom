@@ -7,6 +7,42 @@
   "client": [
     {
       "client_info": {
+        "mobilesdk_app_id": "1:51450105930:android:689b901750a3b3d21216b3",
+        "android_client_info": {
+          "package_name": "com.cadmil.bloom"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "51450105930-ual74bgpei39ctpmvi3s376qd2ll4m5q.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD02Epb0ZxQyWQSZMGu_0u7yosQ9dtLQZQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "51450105930-ual74bgpei39ctpmvi3s376qd2ll4m5q.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "51450105930-8ie4blf2ouh6qqhmg6nf0bgogvtq3dhn.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.bloom"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
         "mobilesdk_app_id": "1:51450105930:android:dc9df20310e59c9b1216b3",
         "android_client_info": {
           "package_name": "com.cadmil.screamer_bot"
@@ -31,10 +67,10 @@
               "client_type": 3
             },
             {
-              "client_id": "51450105930-g3f855ghspcmcm12qff6euss695gonmp.apps.googleusercontent.com",
+              "client_id": "51450105930-8ie4blf2ouh6qqhmg6nf0bgogvtq3dhn.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
-                "bundle_id": "com.example.screamerBot"
+                "bundle_id": "com.example.bloom"
               }
             }
           ]
@@ -67,10 +103,10 @@
               "client_type": 3
             },
             {
-              "client_id": "51450105930-g3f855ghspcmcm12qff6euss695gonmp.apps.googleusercontent.com",
+              "client_id": "51450105930-8ie4blf2ouh6qqhmg6nf0bgogvtq3dhn.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
-                "bundle_id": "com.example.screamerBot"
+                "bundle_id": "com.example.bloom"
               }
             }
           ]

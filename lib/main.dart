@@ -108,13 +108,13 @@ class _AnimatedSplashScreenState extends State<AnimatedSplashScreen>
     _controller.forward();
 
     // ✅ Safer navigation
-    /*Future.delayed(const Duration(seconds: 3), () {
+    Future.delayed(const Duration(seconds: 3), () {
       if (!mounted) return; // 👈 prevent context use after dispose
       Navigator.pushReplacement(
         context,
         CupertinoPageRoute(builder: (context) => const OnboardingFlow()),
       );
-    });*/
+    });
   }
 
   @override

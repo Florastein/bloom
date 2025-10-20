@@ -17,13 +17,19 @@ import 'package:flutter/foundation.dart'
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
-      return web;
+      throw UnsupportedError(
+        'DefaultFirebaseOptions have not been configured for web - '
+        'you can reconfigure this by running the FlutterFire CLI again.',
+      );
     }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
         return android;
       case TargetPlatform.iOS:
-        return ios;
+        throw UnsupportedError(
+          'DefaultFirebaseOptions have not been configured for ios - '
+          'you can reconfigure this by running the FlutterFire CLI again.',
+        );
       case TargetPlatform.macOS:
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for macos - '
@@ -46,31 +52,11 @@ class DefaultFirebaseOptions {
     }
   }
 
-  static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyDszBBrUAKOVjsAzunG5vjLg4JpYiW_xzY',
-    appId: '1:51450105930:web:9399bb76e7aa11061216b3',
-    messagingSenderId: '51450105930',
-    projectId: 'true-rex',
-    authDomain: 'true-rex.firebaseapp.com',
-    storageBucket: 'true-rex.firebasestorage.app',
-    measurementId: 'G-QX3ZD9M9N6',
-  );
-
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyD02Epb0ZxQyWQSZMGu_0u7yosQ9dtLQZQ',
-    appId: '1:51450105930:android:c26b0ab7e92722231216b3',
+    appId: '1:51450105930:android:689b901750a3b3d21216b3',
     messagingSenderId: '51450105930',
     projectId: 'true-rex',
     storageBucket: 'true-rex.firebasestorage.app',
-  );
-
-  static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyAscBtV5txmBs03nylM199Oq_svaEayiVo',
-    appId: '1:51450105930:ios:77d89cbcb7a276c61216b3',
-    messagingSenderId: '51450105930',
-    projectId: 'true-rex',
-    storageBucket: 'true-rex.firebasestorage.app',
-    iosClientId: '51450105930-8ie4blf2ouh6qqhmg6nf0bgogvtq3dhn.apps.googleusercontent.com',
-    iosBundleId: 'com.example.bloom',
   );
 }
