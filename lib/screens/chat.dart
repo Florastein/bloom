@@ -345,8 +345,8 @@ class _ChatScreenState extends State<ChatScreen> {
             padding: const EdgeInsets.all(8.0),
             child: CircleAvatar(
               backgroundColor: Colors.lightGreen,
-              radius: 20,
-              child: const Icon(Icons.spa, color: Colors.white, size: 32),
+              radius: 16,
+              child: const Icon(Icons.spa, color: Colors.white, size: 28),
             ),
           ),
           title: Column(
@@ -356,7 +356,7 @@ class _ChatScreenState extends State<ChatScreen> {
               Text(
                 "Bloom",
                 style: GoogleFonts.plusJakartaSans(
-                  fontWeight: FontWeight.w500,
+                  fontWeight: FontWeight.bold,
                   color: isDark ? Colors.white : Colors.black,
                   fontSize: 18,
                 ),
@@ -375,8 +375,8 @@ class _ChatScreenState extends State<ChatScreen> {
                         SizedBox(width: 8),
                         Text(
                           "Online",
-                          style: GoogleFonts.montserrat(
-                            fontSize: 10,
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
                             color: Colors.green,
                           ),
                         ),
@@ -395,8 +395,8 @@ class _ChatScreenState extends State<ChatScreen> {
                         SizedBox(width: 8),
                         Text(
                           "Offline",
-                          style: GoogleFonts.montserrat(
-                            fontSize: 10,
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
                             color: Colors.red,
                           ),
                         ),
@@ -902,7 +902,7 @@ class ChatBubble extends StatelessWidget {
         spans.add(
           TextSpan(
             text: text.substring(start, match.start),
-            style: GoogleFonts.workSans(color: Colors.black87),
+            style: GoogleFonts.plusJakartaSans(color: Colors.black87),
           ),
         );
       }
@@ -948,8 +948,8 @@ class ChatBubble extends StatelessWidget {
             if (!isMe) ...[
               CircleAvatar(
                 backgroundColor: Colors.lightGreen,
-                radius: 20,
-                child: const Icon(Icons.spa, color: Colors.white, size: 32),
+                radius: 14,
+                child: const Icon(Icons.spa, color: Colors.white, size: 24),
               ),
               const SizedBox(width: 8),
             ],

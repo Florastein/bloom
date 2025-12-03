@@ -7,6 +7,7 @@ import 'package:bloom/screens/emergency.dart';
 import 'package:bloom/screens/journal.dart';
 import 'package:bloom/screens/userDetails.dart';
 import 'package:bloom/services/db_service.dart';
+import 'package:bootstrap_icons/bootstrap_icons.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_popup_card/flutter_popup_card.dart' hide PopupCard;
@@ -51,7 +52,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Future<void> _initializeChatService() async {
     final List<String> usernames = await getUsernames();
-    debugPrint("Usernames: ${usernames.toString()}");
 
     final String userName = usernames.isNotEmpty
         ? usernames.first.split(" ").first
@@ -62,7 +62,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     setState(() {
       _userName = userName;
       fullName = fname;
-      debugPrint("Username set: $_userName");
     });
   }
 
@@ -117,36 +116,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ],
         ),
 
-        // Add profile icon or other header elements if needed
-        /*Stack(
-          children: [
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.green[100],
-                  shape: BoxShape.circle,
-                ),
-                child: Text(
-                  userName,
-                  style: GoogleFonts.plusJakartaSans(color: Colors.green),
-                ),
-              ),
-            ),
-            Align(
-              alignment: Alignment.centerRight,
-              child: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: Colors.green[100],
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(Icons.person, color: Colors.green[800]),
-              ),
-            ),
-          ],
-        ),*/
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -276,9 +245,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
                 elevation: 3,
               ),
-              child: const Text(
-                'Start Chat',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(BootstrapIcons.chat, color: Colors.white),
+                  SizedBox(width: 8),
+                  const Text(
+                    'Start Chat',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  ),
+                ],
               ),
             ),
           ),
