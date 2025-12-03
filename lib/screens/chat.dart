@@ -523,7 +523,7 @@ class _ChatScreenState extends State<ChatScreen> {
                               fillColor: Theme.of(
                                 context,
                               ).scaffoldBackgroundColor,
-                              hintText: "Message Esther...",
+                              hintText: "Message Bloom...",
                               border: InputBorder.none,
                               isDense: true,
                             ),
