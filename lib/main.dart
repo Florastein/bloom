@@ -1,5 +1,6 @@
 import 'package:bloom/firebase_options.dart';
 import 'package:bloom/models/chat_message.dart';
+import 'package:bloom/models/journal_entry.dart';
 import 'package:bloom/models/mood_log.dart';
 import 'package:bloom/models/user.dart';
 //import 'package:bloom/screens/breath.dart';
@@ -27,11 +28,15 @@ Future<void> _initializeApp() async {
 
   Hive.registerAdapter(ChatMessageAdapter());
   Hive.registerAdapter(UserAdapter());
-  Hive.registerAdapter(MoodLogAdapter());
+  Hive.registerAdapter(MoodLogMigrationAdapter());
 
   await Hive.openBox<ChatMessage>('chat_messages');
   await Hive.openBox<User>('users');
   await Hive.openBox<MoodLog>('mood_logs');
+
+  // Open boxes for new features (using dynamic type for now)
+  await Hive.openBox('journal_entries');
+  await Hive.openBox('breathing_sessions');
 }
 
 class MyApp extends StatelessWidget {

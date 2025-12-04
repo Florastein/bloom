@@ -206,7 +206,9 @@ class ChatDBService {
   }
 }*/
 
+import 'package:bloom/models/breathing_session.dart';
 import 'package:bloom/models/chat_message.dart';
+import 'package:bloom/models/journal_entry.dart';
 import 'package:bloom/models/mood_log.dart';
 import 'package:bloom/models/user.dart';
 import 'package:hive/hive.dart';
@@ -267,5 +269,37 @@ class HiveDBService {
     await Hive.box<ChatMessage>('chat_messages').clear();
     await Hive.box<User>('users').clear();
     await Hive.box<MoodLog>('mood_logs').clear();
+  }
+
+  /// Journal Entries
+  static Future<void> saveJournalEntry(JournalEntry entry) async {
+    final box = Hive.box<JournalEntry>('journal_entries');
+    await box.add(entry);
+  }
+
+  static List<JournalEntry> getAllJournalEntries() {
+    final box = Hive.box<JournalEntry>('journal_entries');
+    return box.values.toList();
+  }
+
+  static Future<void> deleteJournalEntry(int index) async {
+    final box = Hive.box<JournalEntry>('journal_entries');
+    await box.deleteAt(index);
+  }
+
+  /// Breathing Sessions
+  static Future<void> saveBreathingSession(BreathingSession session) async {
+    final box = Hive.box<BreathingSession>('breathing_sessions');
+    await box.add(session);
+  }
+
+  static List<BreathingSession> getAllBreathingSessions() {
+    final box = Hive.box<BreathingSession>('breathing_sessions');
+    return box.values.toList();
+  }
+
+  static Future<void> deleteBreathingSession(int index) async {
+    final box = Hive.box<BreathingSession>('breathing_sessions');
+    await box.deleteAt(index);
   }
 }

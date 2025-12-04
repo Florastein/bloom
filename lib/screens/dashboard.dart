@@ -7,6 +7,8 @@ import 'package:bloom/screens/emergency.dart';
 import 'package:bloom/screens/journal.dart';
 import 'package:bloom/screens/userDetails.dart';
 import 'package:bloom/services/db_service.dart';
+import 'package:bloom/widgets/dashboard_stats_cards.dart';
+import 'package:bloom/widgets/mood_trends_chart.dart';
 import 'package:bootstrap_icons/bootstrap_icons.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -67,7 +69,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    debugPrint("Username: $_userName");
     return Scaffold(
       backgroundColor: Colors.green[50],
       body: SafeArea(
@@ -82,6 +83,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
               // Welcome card
               _buildWelcomeCard(context),
+              const SizedBox(height: 30),
+
+              // Stats cards
+              const DashboardStatsCards(),
+              const SizedBox(height: 30),
+
+              // Mood trends chart
+              const MoodTrendsChart(),
               const SizedBox(height: 30),
 
               // Quick actions grid
@@ -221,7 +230,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           Text(
             'Tap below to start a chat – no login needed.',
             style: TextStyle(
-              fontSize: 16,
+              fontSize: 14,
               color: Colors.green[600],
               height: 1.5,
             ),
@@ -389,72 +398,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
     );
   }
-
-  /*Widget _buildRecentMoods() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Recent Moods',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-            color: Colors.green[800],
-          ),
-        ),
-        const SizedBox(height: 16),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(15),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.green.withOpacity(0.1),
-                blurRadius: 10,
-                offset: const Offset(0, 3),
-              ),
-            ],
-          ),
-          child: Column(
-            children: [
-              Icon(Icons.sentiment_neutral, size: 50, color: Colors.green[300]),
-              const SizedBox(height: 12),
-              Text(
-                'No moods yet – tap "Mood" to add.',
-                style: TextStyle(fontSize: 16, color: Colors.green[600]),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () {
-                  // Navigate to mood tracking
-                  Navigator.of(context).push(
-                    CupertinoPageRoute(
-                      builder: (context) => OnboardingScreen(),
-                    ),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green[100],
-                  foregroundColor: Colors.green[800],
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 12,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                child: const Text('Add Mood'),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }*/
 
   Widget _buildRecentMoods(BuildContext context) {
     final moods = HiveDBService.getAllMoodLogs();
@@ -645,7 +588,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             final MoodLog mood = moods[index];
             final date = DateFormat(
               'MMM d, yyyy • hh:mm a',
-            ).format(DateTime.parse(mood.timestamp));
+            ).format(mood.timestamp);
 
             return _buildMoodItem(context, mood, date, index);
           },

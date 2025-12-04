@@ -36,11 +36,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     String? note,
   }) async {
     try {
-      final timestamp = DateFormat(
-        'yyyy-MM-dd HH:mm:ss',
-      ).format(DateTime.now());
-
-      final moodLog = MoodLog(mood: mood, note: note, timestamp: timestamp);
+      final moodLog = MoodLog(
+        mood: mood,
+        note: note,
+        timestamp: DateTime.now(),
+      );
       debugPrint("Mood Log: $moodLog.toString()");
 
       await HiveDBService.saveMoodLog(moodLog);

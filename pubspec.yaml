@@ -52,6 +52,7 @@ dependencies:
   smart_edge_alert: ^0.1.2
   flutter_popup_card: ^0.0.6
   awesome_snackbar_content: ^0.1.8
+  fl_chart: ^0.69.0
 
 dev_dependencies:
   flutter_test:

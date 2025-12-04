@@ -19,7 +19,7 @@ class MoodLogAdapter extends TypeAdapter<MoodLog> {
     return MoodLog(
       mood: fields[0] as String,
       note: fields[1] as String?,
-      timestamp: fields[2] as String,
+      timestamp: fields[2] as DateTime,
     );
   }
 
