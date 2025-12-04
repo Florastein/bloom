@@ -15,6 +15,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_popup_card/flutter_popup_card.dart' hide PopupCard;
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'dart:math';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -27,11 +28,77 @@ class _DashboardScreenState extends State<DashboardScreen> {
   String _userName = "";
   String fullName = "";
 
+  // Quotes list
+  final List<String> _quotes = [
+    "Believe you can and you're halfway there.",
+    "The only way to do great work is to love what you do.",
+    "You are enough just as you are.",
+    "Every day is a fresh start.",
+    "Keep your face always toward the sunshine—and shadows will fall behind you.",
+    "Small steps every day add up to big results.",
+    "Your potential is endless.",
+  ];
+
+  String _currentQuote = "";
+
+  // Mock weather data
+  String _weatherCondition = "Sunny";
+  String _weatherSuggestion = "Perfect time for a walk!";
+  IconData _weatherIcon = Icons.wb_sunny;
+  Color _weatherColor = Colors.orange;
+
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     _initializeChatService();
+    _loadDailyContent();
+  }
+
+  void _loadDailyContent() {
+    // Random quote
+    setState(() {
+      _currentQuote = _quotes[Random().nextInt(_quotes.length)];
+
+      // Mock weather logic (random for demo)
+      final weatherTypes = [
+        {
+          'cond': 'Sunny',
+          'sugg': 'Great day for a walk in nature!',
+          'icon': Icons.wb_sunny,
+          'color': Colors.orange,
+        },
+        {
+          'cond': 'Rainy',
+          'sugg': 'Perfect for reading and cozy journaling.',
+          'icon': Icons.water_drop,
+          'color': Colors.blue,
+        },
+        {
+          'cond': 'Cloudy',
+          'sugg': 'Good time for some deep breathing exercises.',
+          'icon': Icons.cloud,
+          'color': Colors.grey,
+        },
+        {
+          'cond': 'Clear',
+          'sugg': 'Try some stargazing tonight!',
+          'icon': Icons.nightlight_round,
+          'color': Colors.indigo,
+        },
+      ];
+      final weather = weatherTypes[Random().nextInt(weatherTypes.length)];
+      _weatherCondition = weather['cond'] as String;
+      _weatherSuggestion = weather['sugg'] as String;
+      _weatherIcon = weather['icon'] as IconData;
+      _weatherColor = weather['color'] as Color;
+    });
+  }
+
+  String _getGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return 'Good Morning';
+    if (hour < 17) return 'Good Afternoon';
+    return 'Good Evening';
   }
 
   Future<List<String>> getUsernames() async {
@@ -83,6 +150,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
               // Welcome card
               _buildWelcomeCard(context),
+              const SizedBox(height: 20),
+
+              // Daily Quote
+              _buildQuoteCard(),
+              const SizedBox(height: 20),
+
+              // Weather Suggestion
+              _buildWeatherSuggestion(),
               const SizedBox(height: 30),
 
               // Stats cards
@@ -136,7 +211,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(
-                "Hi, $_userName",
+                "${_getGreeting()}, $_userName",
                 style: GoogleFonts.plusJakartaSans(
                   color: Colors.green[800],
                   fontWeight: FontWeight.w500,
@@ -265,6 +340,106 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 ],
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuoteCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Colors.purple[50]!, Colors.white],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.purple.withOpacity(0.1)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.format_quote, color: Colors.purple[300], size: 24),
+              const SizedBox(width: 8),
+              Text(
+                'Daily Inspiration',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.purple[900],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            _currentQuote,
+            style: GoogleFonts.playfairDisplay(
+              fontSize: 18,
+              fontStyle: FontStyle.italic,
+              color: Colors.purple[800],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWeatherSuggestion() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: _weatherColor.withOpacity(0.2)),
+        boxShadow: [
+          BoxShadow(
+            color: _weatherColor.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: _weatherColor.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(_weatherIcon, color: _weatherColor, size: 24),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '$_weatherCondition • Mood Tip',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[600],
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  _weatherSuggestion,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 14,
+                    color: Colors.grey[800],
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
