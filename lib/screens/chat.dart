@@ -873,7 +873,7 @@ class _ChatBubbleState extends State<ChatBubble> {
   }
 }*/
 
-class ChatBubble extends StatelessWidget {
+/*class ChatBubble extends StatelessWidget {
   final String? text;
   final String time;
   final bool isMe;
@@ -1009,6 +1009,316 @@ class ChatBubble extends StatelessWidget {
               ),
             ],
           ],
+        ),
+      ),
+    );
+  }
+}*/
+
+class ChatBubble extends StatelessWidget {
+  final String? text;
+  final String time;
+  final bool isMe;
+  final bool isTyping;
+  final bool isSelected; // 👈 Track selection state
+  final VoidCallback? onDelete;
+  final VoidCallback? onSelect;
+  final VoidCallback? onReply; // 👈 New: Reply functionality
+  final VoidCallback? onCopy; // 👈 New: Copy to clipboard
+
+  const ChatBubble({
+    super.key,
+    required this.text,
+    required this.time,
+    required this.isMe,
+    this.isTyping = false,
+    this.isSelected = false, // 👈 Default to false
+    this.onDelete,
+    this.onSelect,
+    this.onReply,
+    this.onCopy,
+  });
+
+  /// Enhanced text formatter with support for bold (*), italic (_), and code (`)
+  Widget _formattedText(String text) {
+    // Support for *bold*, _italic_, and `code`
+    final boldRegex = RegExp(r'\*(.*?)\*');
+    final italicRegex = RegExp(r'_(.*?)_');
+    final codeRegex = RegExp(r'`(.*?)`');
+
+    List<InlineSpan> spans = [];
+    int start = 0;
+    String remainingText = text;
+
+    // Process all formatting matches in order
+    while (start < remainingText.length) {
+      // Find the earliest formatting match
+      Match? earliestMatch;
+      RegExp? matchedRegex;
+
+      for (final regex in [boldRegex, italicRegex, codeRegex]) {
+        final match = regex.firstMatch(remainingText.substring(start));
+        if (match != null) {
+          final absoluteStart = start + match.start;
+          if (earliestMatch == null ||
+              absoluteStart < start + earliestMatch.start) {
+            earliestMatch = match;
+            matchedRegex = regex;
+          }
+        }
+      }
+
+      if (earliestMatch == null) {
+        // No more formatting, add remaining text
+        spans.add(
+          TextSpan(
+            text: remainingText.substring(start),
+            style: GoogleFonts.plusJakartaSans(
+              color: Colors.black87,
+              fontSize: 15,
+              height: 1.4,
+            ),
+          ),
+        );
+        break;
+      }
+
+      // Add text before the match
+      if (earliestMatch.start > 0) {
+        spans.add(
+          TextSpan(
+            text: remainingText.substring(start, start + earliestMatch.start),
+            style: GoogleFonts.plusJakartaSans(
+              color: Colors.black87,
+              fontSize: 15,
+              height: 1.4,
+            ),
+          ),
+        );
+      }
+
+      // Add formatted text
+      TextStyle style;
+      if (matchedRegex == boldRegex) {
+        style = GoogleFonts.workSans(
+          fontWeight: FontWeight.w600,
+          color: Colors.black87,
+          fontSize: 15,
+          height: 1.4,
+        );
+      } else if (matchedRegex == italicRegex) {
+        style = GoogleFonts.plusJakartaSans(
+          fontStyle: FontStyle.italic,
+          color: Colors.black87,
+          fontSize: 15,
+          height: 1.4,
+        );
+      } else {
+        style = GoogleFonts.robotoMono(
+          color: Colors.black87,
+          backgroundColor: Colors.grey.shade100,
+          fontSize: 13,
+        );
+      }
+
+      spans.add(TextSpan(text: earliestMatch.group(1), style: style));
+
+      start = start + earliestMatch.end;
+    }
+
+    return SelectableText.rich(
+      TextSpan(children: spans),
+      cursorColor: isMe ? Colors.blue.shade600 : Colors.green.shade600,
+      showCursor: true,
+      toolbarOptions: const ToolbarOptions(copy: true, selectAll: true),
+    );
+  }
+
+  /// Shows context menu options
+  void _showContextMenu(BuildContext context) {
+    final RenderBox renderBox = context.findRenderObject() as RenderBox;
+    final position = renderBox.localToGlobal(Offset.zero);
+
+    showMenu(
+      context: context,
+      position: RelativeRect.fromLTRB(
+        position.dx,
+        position.dy,
+        position.dx + renderBox.size.width,
+        position.dy + renderBox.size.height,
+      ),
+      items: [
+        if (onCopy != null)
+          PopupMenuItem(
+            value: 'copy',
+            onTap: onCopy,
+            child: Row(
+              children: [
+                const Icon(Icons.copy, size: 20),
+                const SizedBox(width: 10),
+                Text('Copy', style: GoogleFonts.plusJakartaSans()),
+              ],
+            ),
+          ),
+        if (onReply != null)
+          PopupMenuItem(
+            value: 'reply',
+            onTap: onReply,
+            child: Row(
+              children: [
+                Icon(Icons.reply, size: 20, color: Colors.blue.shade600),
+                const SizedBox(width: 10),
+                Text('Reply', style: GoogleFonts.plusJakartaSans()),
+              ],
+            ),
+          ),
+        if (onDelete != null)
+          PopupMenuItem(
+            value: 'delete',
+            onTap: onDelete,
+            child: Row(
+              children: [
+                const Icon(Icons.delete_outline, size: 20, color: Colors.red),
+                const SizedBox(width: 10),
+                Text(
+                  'Delete',
+                  style: GoogleFonts.plusJakartaSans(color: Colors.red),
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final maxBubbleWidth = screenWidth * 0.75;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: GestureDetector(
+        onLongPress: () {
+          HapticFeedback.lightImpact();
+          onSelect?.call();
+          _showContextMenu(context);
+        },
+        onTap: () {
+          if (isSelected) {
+            onSelect?.call(); // Deselect on tap if selected
+          }
+        },
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            color: isSelected
+                ? (isMe ? Colors.blue.shade50 : Colors.green.shade50)
+                : Colors.transparent,
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+          child: Align(
+            alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (!isMe) ...[
+                  CircleAvatar(
+                    backgroundColor: Colors.lightGreen.shade400,
+                    radius: 16,
+                    child: Icon(Icons.spa, color: Colors.white, size: 20),
+                  ),
+                  const SizedBox(width: 8),
+                ],
+                Flexible(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: maxBubbleWidth),
+                    child: Column(
+                      crossAxisAlignment: isMe
+                          ? CrossAxisAlignment.end
+                          : CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                          decoration: BoxDecoration(
+                            color: isMe
+                                ? Colors.blue.shade500
+                                : Colors.grey.shade100,
+                            borderRadius: BorderRadius.only(
+                              topLeft: const Radius.circular(20),
+                              topRight: const Radius.circular(20),
+                              bottomLeft: Radius.circular(isMe ? 20 : 4),
+                              bottomRight: Radius.circular(isMe ? 4 : 20),
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.05),
+                                blurRadius: 6,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: isTyping
+                              ? SizedBox(
+                                  width: 60,
+                                  height: 24,
+                                  child: Lottie.asset(
+                                    'assets/animations/mem_load.json',
+                                    fit: BoxFit.contain,
+                                  ),
+                                )
+                              : _formattedText(text ?? ''),
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (!isMe) ...[
+                              // Status indicators could go here
+                              // Icon(Icons.done_all, size: 12, color: Colors.blue),
+                              // const SizedBox(width: 4),
+                            ],
+                            Text(
+                              time,
+                              style: GoogleFonts.workSans(
+                                fontSize: 11,
+                                color: Colors.grey.shade600,
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
+                            if (isMe) ...[
+                              const SizedBox(width: 4),
+                              Icon(
+                                Icons.done_all,
+                                size: 12,
+                                color: Colors.blue.shade500,
+                              ),
+                            ],
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                if (isMe) ...[
+                  const SizedBox(width: 8),
+                  CircleAvatar(
+                    radius: 16,
+                    backgroundColor: Colors.blue.shade100,
+                    child: Icon(
+                      Icons.person,
+                      size: 16,
+                      color: Colors.blue.shade800,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
         ),
       ),
     );

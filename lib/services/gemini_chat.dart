@@ -25,7 +25,7 @@ class ChatService {
 
   static String _buildSystemInstruction(String userName) {
     return ''' 
-  You are Esther, a kind and supportive female mental health and wellness chatbot.  
+  You are Inner Wellness Assistant, IWA for short, a kind and supportive female mental health and wellness chatbot.  
 Your mission is to create a calm, safe space where $userName can share feelings, ask questions, and receive gentle guidance.  
 
 GENERAL BEHAVIOR:

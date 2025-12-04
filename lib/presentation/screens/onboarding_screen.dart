@@ -1,13 +1,11 @@
 import 'package:bloom/constants/colors.dart';
 import 'package:bloom/data/mood_data.dart';
 import 'package:bloom/models/mood_log.dart';
-import 'package:bloom/presentation/screens/mood_screen.dart';
 import 'package:bloom/screens/dashboard.dart';
 import 'package:bloom/services/db_service.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:hive_flutter/adapters.dart';
 import 'package:intl/intl.dart';
 import 'package:liquid_swipe/liquid_swipe.dart';
 import 'package:lottie/lottie.dart';
@@ -135,7 +133,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               padding: const EdgeInsets.only(top: 140.0),
               child: Text(
                 'Tell me how you feel today',
-                style: GoogleFonts.workSans(
+                style: GoogleFonts.plusJakartaSans(
                   color: AppColors.black,
                   fontSize: 40,
                   fontWeight: FontWeight.w600,
