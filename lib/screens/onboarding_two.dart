@@ -89,7 +89,7 @@ class MinimalOnboardingCard2 extends StatelessWidget {
                   },
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Colors.green,
-                    side: BorderSide(color: Colors.green!),
+                    side: BorderSide(color: Colors.green),
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),

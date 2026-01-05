@@ -29,7 +29,7 @@ class _AnimatedProfileInformationScreenState
   final TextEditingController _dayController = TextEditingController();
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
-  bool _preferNotToSay = false;
+  final bool _preferNotToSay = false;
 
   @override
   void initState() {

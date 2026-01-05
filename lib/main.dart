@@ -1,6 +1,5 @@
 import 'package:bloom/firebase_options.dart';
 import 'package:bloom/models/chat_message.dart';
-import 'package:bloom/models/journal_entry.dart';
 import 'package:bloom/models/mood_log.dart';
 import 'package:bloom/models/user.dart';
 //import 'package:bloom/screens/breath.dart';

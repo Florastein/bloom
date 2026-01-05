@@ -646,7 +646,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       child: Column(
         children: [
           // Mood preview icons
-          Container(
+          SizedBox(
             height: 60,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,

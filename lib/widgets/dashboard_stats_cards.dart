@@ -48,7 +48,7 @@ class _DashboardStatsCardsState extends State<DashboardStatsCards> {
 
   Future<int> _getJournalCount() async {
     try {
-      final entries = await HiveDBService.getAllJournalEntries();
+      final entries = HiveDBService.getAllJournalEntries();
       return entries.length;
     } catch (e) {
       return 0;
@@ -57,7 +57,7 @@ class _DashboardStatsCardsState extends State<DashboardStatsCards> {
 
   Future<int> _getChatSessionsThisWeek() async {
     try {
-      final messages = await HiveDBService.getAllMessages();
+      final messages = HiveDBService.getAllMessages();
       final now = DateTime.now();
       final weekStart = now.subtract(Duration(days: now.weekday - 1));
       final weekStartMidnight = DateTime(
@@ -83,7 +83,7 @@ class _DashboardStatsCardsState extends State<DashboardStatsCards> {
 
   Future<int> _getBreathingCount() async {
     try {
-      final sessions = await HiveDBService.getAllBreathingSessions();
+      final sessions = HiveDBService.getAllBreathingSessions();
       return sessions.length;
     } catch (e) {
       return 0;
@@ -92,7 +92,7 @@ class _DashboardStatsCardsState extends State<DashboardStatsCards> {
 
   Future<int> _getMoodStreak() async {
     try {
-      final moods = await HiveDBService.getAllMoodLogs();
+      final moods = HiveDBService.getAllMoodLogs();
       if (moods.isEmpty) return 0;
 
       // Sort moods by date (newest first)

@@ -215,6 +215,8 @@ class PopupCard extends StatelessWidget {
 class UserProfileManager extends StatelessWidget {
   final String currentUserName = "John Doe";
 
+  const UserProfileManager({super.key});
+
   void _openUserPopup(BuildContext context) {
     UserDetailsPopup.show(
       context: context,
