@@ -5,6 +5,8 @@ import 'package:bloom/models/chat_message.dart';
 import 'package:bloom/services/db_service.dart';
 import 'package:bloom/services/gemini_chat.dart';
 import 'package:bloom/services/online.dart';
+import 'package:bloom/screens/breath.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -779,6 +781,29 @@ class ChatBubble extends StatelessWidget {
     final screenWidth = MediaQuery.of(context).size.width;
     final maxBubbleWidth = screenWidth * 0.75;
 
+    // Check for interactive tags
+    final String content = (text ?? '');
+
+    // Parse duration if present
+    int? duration;
+    final RegExp tagRegex = RegExp(r'\[BREATHING_EXERCISE(?::(\d+))?\]');
+    final match = tagRegex.firstMatch(content);
+
+    bool hasBreathingTag = false;
+
+    if (match != null) {
+      hasBreathingTag = true;
+      if (match.group(1) != null) {
+        duration = int.tryParse(match.group(1)!);
+      }
+    } else if (!isMe &&
+        (content.toLowerCase().contains('breathing exercise') ||
+            content.toLowerCase().contains('deep breathing'))) {
+      hasBreathingTag = true;
+    }
+
+    final String cleanText = content.replaceAll(tagRegex, '');
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: GestureDetector(
@@ -845,16 +870,73 @@ class ChatBubble extends StatelessWidget {
                               ),
                             ],
                           ),
-                          child: isTyping
-                              ? SizedBox(
-                                  width: 60,
-                                  height: 24,
-                                  child: Lottie.asset(
-                                    'assets/animations/mem_load.json',
-                                    fit: BoxFit.contain,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              isTyping
+                                  ? SizedBox(
+                                      width: 60,
+                                      height: 24,
+                                      child: Lottie.asset(
+                                        'assets/animations/mem_load.json',
+                                        fit: BoxFit.contain,
+                                      ),
+                                    )
+                                  : _formattedText(cleanText),
+
+                              // Interactive Action Button
+                              if (hasBreathingTag && !isTyping) ...[
+                                const SizedBox(height: 12),
+                                GestureDetector(
+                                  onTap: () {
+                                    Navigator.of(context).push(
+                                      CupertinoPageRoute(
+                                        builder: (context) =>
+                                            FlowerBreathScreen(
+                                              durationSeconds: duration,
+                                              onComplete: () {
+                                                Navigator.of(context).pop();
+                                              },
+                                            ),
+                                      ),
+                                    );
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 10,
+                                      horizontal: 16,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.green.shade100,
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: Colors.green.shade300,
+                                      ),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          Icons.air,
+                                          color: Colors.green.shade800,
+                                          size: 20,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          "Start Breathing Session",
+                                          style: GoogleFonts.plusJakartaSans(
+                                            color: Colors.green.shade800,
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                )
-                              : _formattedText(text ?? ''),
+                                ),
+                              ],
+                            ],
+                          ),
                         ),
                         const SizedBox(height: 4),
                         Row(

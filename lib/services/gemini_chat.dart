@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:developer';
 
+import 'package:bloom/services/db_service.dart';
 import 'package:firebase_ai/firebase_ai.dart';
 
 class ChatService {
@@ -24,16 +25,21 @@ class ChatService {
   }
 
   static String _buildSystemInstruction(String userName) {
+    final moodSummary = _getMoodSummary();
+
     return ''' 
   You are Inner Wellness Assistant, IWA for short, a kind and supportive female mental health and wellness chatbot.  
 Your mission is to create a calm, safe space where $userName can share feelings, ask questions, and receive gentle guidance.  
 
+USER MOOD CONTEXT:
+$moodSummary
+
 GENERAL BEHAVIOR:
 - Always call the user "$userName" where appropriate.  
 - Keep replies short, clear, and caring.  
-- If the user says "Hi" or "hi":  
-  * At session start → reply "Hi, how are you?"  
-  * Otherwise → reply "Howdy?"  
+- If the user says "Hi" or "hi" or any greeting:
+  * IF "RECENT MOOD ALERT" is present in the context above: acknowledging the greeting briefly, then IMMEDIATELY address that specific mood. Ask gently about what caused it.
+  * OTHERWISE: reply "Hi, how are you?" or "Howdy?" if no recent mood is pressing.
 - Use a friendly, warm tone with simple words.  
 - You are both a therapist and a wellness companion.  
 
@@ -43,8 +49,7 @@ MENTAL HEALTH SUPPORT:
   * Gently encourage them to reach out to a mental health professional or crisis hotline.  
   * Share https://www.befrienders.org/ for worldwide support.  
 - If the user is in crisis (e.g., suicidal thoughts), provide Ghana-specific options:  
-  * Mental Health Authority Helpline: 050 991 4046 or 020 681 4666  
-  * Samaritans Ghana (Suicide Prevention): 030 225 7946  
+  * Mental Health Authority Helpline: 050 991 4046 or 020 681 4666
   * Emergency Services (Police, Ambulance, Fire): Dial 112 (toll-free)  
 
 SIMPLE HEALTH ADVICE:
@@ -70,7 +75,92 @@ REPLY STYLE:
 - Use a structured style (short bullet tips) for simple health remedies and lifestyle advice.  
 - Always stay warm, supportive, and non-judgmental.  
 
+INTERACTIVE ELEMENTS:
+- If you suggest a breathing exercise or deep breathing, ALWAYS append the tag `[BREATHING_EXERCISE]` at the very end.
+- You can optionally specify a duration in seconds if needed, like `[BREATHING_EXERCISE:60]` for a 60-second session.
+- If no duration is specified, it defaults to ~48 seconds.
+- Example: "Let's take a deep breath. [BREATHING_EXERCISE:120]"
   ''';
+  }
+
+  static String _getMoodSummary() {
+    try {
+      final moods = HiveDBService.getAllMoodLogs();
+
+      if (moods.isEmpty) {
+        return "- No mood logs recorded yet. Encourage the user to track their mood.";
+      }
+
+      final now = DateTime.now();
+
+      // Check for VERY recent mood (last 5 minutes)
+      final veryRecentLimit = now.subtract(const Duration(minutes: 5));
+      final veryRecentMoods = moods
+          .where((log) => log.timestamp.isAfter(veryRecentLimit))
+          .toList();
+
+      String urgentContext = "";
+      if (veryRecentMoods.isNotEmpty) {
+        final latest = veryRecentMoods.first;
+        urgentContext =
+            '''
+*** RECENT MOOD ALERT ***
+The user JUST logged their mood as "${latest.mood}" (less than 5 minutes ago). 
+Note provided: "${latest.note ?? 'None'}".
+Your TOP PRIORITY is to support them regarding this specific mood immediately after saying hello.
+''';
+      }
+
+      // Get last 7 days of moods for general context
+      final recentLimit = now.subtract(const Duration(days: 7));
+      final recentMoods = moods
+          .where((log) => log.timestamp.isAfter(recentLimit))
+          .toList();
+
+      if (recentMoods.isEmpty) {
+        return "$urgentContext\n- Last mood logged over a week ago. Gently encourage regular mood tracking.";
+      }
+
+      // Build summary
+      final latestMood = recentMoods.first;
+      // Calculate most common mood
+      final moodCounts = <String, int>{};
+      for (var log in recentMoods) {
+        moodCounts[log.mood] = (moodCounts[log.mood] ?? 0) + 1;
+      }
+
+      String mostCommonMood = "N/A";
+      if (moodCounts.isNotEmpty) {
+        mostCommonMood = moodCounts.entries
+            .reduce((a, b) => a.value > b.value ? a : b)
+            .key;
+      }
+
+      return '''
+$urgentContext
+- Latest mood: ${latestMood.mood} (logged ${_formatTimeAgo(latestMood.timestamp)})
+- Past 7 days: ${recentMoods.length} mood entries
+- Most common mood: $mostCommonMood
+- Use this context to provide personalized, empathetic support.
+''';
+    } catch (e) {
+      return "- Unable to access mood data at this time.";
+    }
+  }
+
+  static String _formatTimeAgo(DateTime timestamp) {
+    final now = DateTime.now();
+    final difference = now.difference(timestamp);
+
+    if (difference.inMinutes < 60) {
+      return '${difference.inMinutes} minutes ago';
+    } else if (difference.inHours < 24) {
+      return '${difference.inHours} hours ago';
+    } else if (difference.inDays == 1) {
+      return 'yesterday';
+    } else {
+      return '${difference.inDays} days ago';
+    }
   }
 
   Stream<GenerateContentResponse> sendMessageStream(String message) {

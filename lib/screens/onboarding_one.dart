@@ -139,28 +139,6 @@ class _AnimatedOnboardingCardState extends State<AnimatedOnboardingCard>
                         child: Column(
                           children: [
                             const Spacer(),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Container(
-                                  width: 8,
-                                  height: 8,
-                                  decoration: BoxDecoration(
-                                    color: Colors.green,
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
-                                const SizedBox(width: 10),
-                                Container(
-                                  width: 8,
-                                  height: 8,
-                                  decoration: BoxDecoration(
-                                    color: Colors.green.shade100,
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
-                              ],
-                            ),
                             SizedBox(height: 10),
                             SizedBox(
                               width: double.infinity,
