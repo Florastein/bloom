@@ -247,6 +247,12 @@ class HiveDBService {
     await box.deleteAt(index);
   }
 
+  static String? getFirstUserName() {
+    final users = getAllUsers();
+    if (users.isEmpty) return null;
+    return users.first.name;
+  }
+
   /// Mood Logs
   static Future<void> saveMoodLog(MoodLog log) async {
     final box = Hive.box<MoodLog>('mood_logs');

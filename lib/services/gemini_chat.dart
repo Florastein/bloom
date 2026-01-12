@@ -10,7 +10,7 @@ class ChatService {
   final GenerativeModel _model;
   late final ChatSession _chat;
 
-  ChatService({required this.userName, this.modelName = 'gemini-2.5-flash'})
+  ChatService({required this.userName, this.modelName = 'gemini-1.5-flash'})
     : _model = FirebaseAI.googleAI().generativeModel(
         model: modelName,
         systemInstruction: Content.system(_buildSystemInstruction(userName)),

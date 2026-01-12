@@ -1,5 +1,7 @@
 import 'package:bloom/firebase_options.dart';
 import 'package:bloom/models/chat_message.dart';
+import 'package:bloom/models/journal_entry.dart';
+import 'package:bloom/models/breathing_session.dart';
 import 'package:bloom/models/mood_log.dart';
 import 'package:bloom/models/user.dart';
 //import 'package:bloom/screens/breath.dart';
@@ -12,6 +14,7 @@ import 'package:hive/hive.dart';
 import 'package:path_provider/path_provider.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:bloom/constants/colors.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,14 +31,16 @@ Future<void> _initializeApp() async {
   Hive.registerAdapter(ChatMessageAdapter());
   Hive.registerAdapter(UserAdapter());
   Hive.registerAdapter(MoodLogMigrationAdapter());
+  Hive.registerAdapter(JournalEntryAdapter());
+  Hive.registerAdapter(BreathingSessionAdapter());
 
   await Hive.openBox<ChatMessage>('chat_messages');
   await Hive.openBox<User>('users');
   await Hive.openBox<MoodLog>('mood_logs');
 
-  // Open boxes for new features (using dynamic type for now)
-  await Hive.openBox('journal_entries');
-  await Hive.openBox('breathing_sessions');
+  // Open boxes for new features with correct types
+  await Hive.openBox<JournalEntry>('journal_entries');
+  await Hive.openBox<BreathingSession>('breathing_sessions');
 }
 
 class MyApp extends StatelessWidget {
@@ -64,12 +69,14 @@ class MyApp extends StatelessWidget {
         future: _checkFirstLaunch(),
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
-            // Show a very lightweight splash while waiting
-            return const AnimatedSplashScreen();
+            return const AnimatedSplashScreen(isChecking: true);
           }
 
           final isFirstLaunch = snapshot.data!;
-          return isFirstLaunch ? AnimatedSplashScreen() : DashboardScreen();
+          return AnimatedSplashScreen(
+            isFirstLaunch: isFirstLaunch,
+            isChecking: false,
+          );
         },
       ),
       debugShowCheckedModeBanner: false,
@@ -78,7 +85,14 @@ class MyApp extends StatelessWidget {
 }
 
 class AnimatedSplashScreen extends StatefulWidget {
-  const AnimatedSplashScreen({super.key});
+  final bool isFirstLaunch;
+  final bool isChecking;
+
+  const AnimatedSplashScreen({
+    super.key,
+    this.isFirstLaunch = false,
+    this.isChecking = false,
+  });
 
   @override
   State<AnimatedSplashScreen> createState() => _AnimatedSplashScreenState();
@@ -111,12 +125,30 @@ class _AnimatedSplashScreenState extends State<AnimatedSplashScreen>
 
     _controller.forward();
 
-    // ✅ Safer navigation
-    Future.delayed(const Duration(seconds: 3), () {
-      if (!mounted) return; // 👈 prevent context use after dispose
+    // Only navigate if we are done checking and animations have some time to play
+    if (!widget.isChecking) {
+      _navigateToNext();
+    }
+  }
+
+  @override
+  void didUpdateWidget(AnimatedSplashScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.isChecking && !widget.isChecking) {
+      _navigateToNext();
+    }
+  }
+
+  void _navigateToNext() {
+    Future.delayed(const Duration(seconds: 2), () {
+      if (!mounted) return;
       Navigator.pushReplacement(
         context,
-        CupertinoPageRoute(builder: (context) => const OnboardingFlow()),
+        CupertinoPageRoute(
+          builder: (context) => widget.isFirstLaunch
+              ? const OnboardingFlow()
+              : const DashboardScreen(),
+        ),
       );
     });
   }
@@ -130,7 +162,7 @@ class _AnimatedSplashScreenState extends State<AnimatedSplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.green[50],
+      backgroundColor: AppColors.bgGreen,
       body: Center(
         child: ScaleTransition(
           scale: _scaleAnimation,
@@ -144,15 +176,15 @@ class _AnimatedSplashScreenState extends State<AnimatedSplashScreen>
                   width: 120,
                   height: 120,
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Colors.lightGreen, Colors.green],
+                    gradient: LinearGradient(
+                      colors: [AppColors.lightGreen, AppColors.primaryGreen],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
                     borderRadius: BorderRadius.circular(30),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.green.withOpacity(0.3),
+                        color: AppColors.primaryGreen.withOpacity(0.3),
                         blurRadius: 10,
                         offset: const Offset(0, 5),
                       ),
@@ -161,12 +193,12 @@ class _AnimatedSplashScreenState extends State<AnimatedSplashScreen>
                   child: const Icon(Icons.spa, color: Colors.white, size: 70),
                 ),
                 const SizedBox(height: 25),
-                const Text(
+                Text(
                   'Bloom',
                   style: TextStyle(
                     fontSize: 48,
                     fontWeight: FontWeight.w700,
-                    color: Colors.green,
+                    color: AppColors.primaryGreen,
                     letterSpacing: 3,
                     fontFamily: 'PlayfairDisplay', // Use a elegant font
                   ),

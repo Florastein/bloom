@@ -12,6 +12,8 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:lottie/lottie.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:bloom/constants/colors.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -274,7 +276,7 @@ class _ChatScreenState extends State<ChatScreen> {
     return SafeArea(
       child: Scaffold(
         resizeToAvoidBottomInset: true,
-        backgroundColor: Colors.green[50],
+        backgroundColor: AppColors.bgGreen,
         appBar: AppBar(
           backgroundColor: isDark
               ? Colors.green[900]?.withOpacity(0.3)
@@ -624,98 +626,34 @@ class ChatBubble extends StatelessWidget {
     this.onCopy,
   });
 
-  /// Enhanced text formatter with support for bold (*), italic (_), and code (`)
-  Widget _formattedText(String text) {
-    // Support for *bold*, _italic_, and `code`
-    final boldRegex = RegExp(r'\*(.*?)\*');
-    final italicRegex = RegExp(r'_(.*?)_');
-    final codeRegex = RegExp(r'`(.*?)`');
-
-    List<InlineSpan> spans = [];
-    int start = 0;
-    String remainingText = text;
-
-    // Process all formatting matches in order
-    while (start < remainingText.length) {
-      // Find the earliest formatting match
-      Match? earliestMatch;
-      RegExp? matchedRegex;
-
-      for (final regex in [boldRegex, italicRegex, codeRegex]) {
-        final match = regex.firstMatch(remainingText.substring(start));
-        if (match != null) {
-          final absoluteStart = start + match.start;
-          if (earliestMatch == null ||
-              absoluteStart < start + earliestMatch.start) {
-            earliestMatch = match;
-            matchedRegex = regex;
-          }
-        }
-      }
-
-      if (earliestMatch == null) {
-        // No more formatting, add remaining text
-        spans.add(
-          TextSpan(
-            text: remainingText.substring(start),
-            style: GoogleFonts.plusJakartaSans(
-              color: Colors.black87,
-              fontSize: 15,
-              height: 1.4,
-            ),
-          ),
-        );
-        break;
-      }
-
-      // Add text before the match
-      if (earliestMatch.start > 0) {
-        spans.add(
-          TextSpan(
-            text: remainingText.substring(start, start + earliestMatch.start),
-            style: GoogleFonts.plusJakartaSans(
-              color: Colors.black87,
-              fontSize: 15,
-              height: 1.4,
-            ),
-          ),
-        );
-      }
-
-      // Add formatted text
-      TextStyle style;
-      if (matchedRegex == boldRegex) {
-        style = GoogleFonts.workSans(
-          fontWeight: FontWeight.w600,
-          color: Colors.black87,
+  /// Enhanced text formatter using flutter_markdown
+  Widget _formattedText(String text, BuildContext context) {
+    final isMe = this.isMe;
+    return MarkdownBody(
+      data: text,
+      selectable: true,
+      styleSheet: MarkdownStyleSheet(
+        p: GoogleFonts.plusJakartaSans(
+          color: isMe ? Colors.white : Colors.black87,
           fontSize: 15,
           height: 1.4,
-        );
-      } else if (matchedRegex == italicRegex) {
-        style = GoogleFonts.plusJakartaSans(
+        ),
+        strong: GoogleFonts.plusJakartaSans(
+          fontWeight: FontWeight.w700,
+          color: isMe ? Colors.white : Colors.black87,
+        ),
+        em: GoogleFonts.plusJakartaSans(
           fontStyle: FontStyle.italic,
-          color: Colors.black87,
-          fontSize: 15,
-          height: 1.4,
-        );
-      } else {
-        style = GoogleFonts.robotoMono(
-          color: Colors.black87,
-          backgroundColor: Colors.grey.shade100,
+          color: isMe ? Colors.white : Colors.black87,
+        ),
+        code: GoogleFonts.robotoMono(
+          backgroundColor: isMe
+              ? Colors.blue.shade700
+              : AppColors.botBubble.withOpacity(0.8),
+          color: isMe ? Colors.white : Colors.black87,
           fontSize: 13,
-        );
-      }
-
-      spans.add(TextSpan(text: earliestMatch.group(1), style: style));
-
-      start = start + earliestMatch.end;
-    }
-
-    return SelectableText.rich(
-      TextSpan(children: spans),
-      cursorColor: isMe ? Colors.blue.shade600 : Colors.green.shade600,
-      showCursor: true,
-      toolbarOptions: const ToolbarOptions(copy: true, selectAll: true),
+        ),
+      ),
     );
   }
 
@@ -854,8 +792,8 @@ class ChatBubble extends StatelessWidget {
                           ),
                           decoration: BoxDecoration(
                             color: isMe
-                                ? Colors.blue.shade500
-                                : Colors.grey.shade100,
+                                ? AppColors.userBubble
+                                : AppColors.botBubble,
                             borderRadius: BorderRadius.only(
                               topLeft: const Radius.circular(20),
                               topRight: const Radius.circular(20),
@@ -882,7 +820,7 @@ class ChatBubble extends StatelessWidget {
                                         fit: BoxFit.contain,
                                       ),
                                     )
-                                  : _formattedText(cleanText),
+                                  : _formattedText(cleanText, context),
 
                               // Interactive Action Button
                               if (hasBreathingTag && !isTyping) ...[

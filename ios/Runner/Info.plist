@@ -44,6 +44,10 @@
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
+		<key>NSLocationWhenInUseUsageDescription</key>
+		<string>Bloom needs your location to provide personalized weather-based mood suggestions.</string>
+		<key>NSLocationAlwaysUsageDescription</key>
+		<string>Bloom needs your location to provide personalized weather-based mood suggestions.</string>
 	<true/>
 </dict>
 </plist>

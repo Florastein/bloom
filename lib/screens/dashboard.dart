@@ -7,15 +7,17 @@ import 'package:bloom/screens/emergency.dart';
 import 'package:bloom/screens/journal.dart';
 import 'package:bloom/screens/userDetails.dart';
 import 'package:bloom/services/db_service.dart';
+import 'package:bloom/services/inspiration_service.dart';
+import 'package:bloom/services/weather_service.dart';
 import 'package:bloom/widgets/dashboard_stats_cards.dart';
 import 'package:bloom/widgets/mood_trends_chart.dart';
+import 'package:bloom/constants/colors.dart';
 import 'package:bootstrap_icons/bootstrap_icons.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_popup_card/flutter_popup_card.dart' hide PopupCard;
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import 'dart:math';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -28,24 +30,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
   String _userName = "";
   String fullName = "";
 
-  // Quotes list
-  final List<String> _quotes = [
-    "Believe you can and you're halfway there.",
-    "The only way to do great work is to love what you do.",
-    "You are enough just as you are.",
-    "Every day is a fresh start.",
-    "Keep your face always toward the sunshine—and shadows will fall behind you.",
-    "Small steps every day add up to big results.",
-    "Your potential is endless.",
-  ];
-
   String _currentQuote = "";
 
-  // Mock weather data
-  String _weatherCondition = "Sunny";
-  String _weatherSuggestion = "Perfect time for a walk!";
+  // Weather data
+  final WeatherService _weatherService = WeatherService();
+  final InspirationService _inspirationService = InspirationService();
+  String _weatherCondition = "Loading...";
+  String _weatherSuggestion = "Fetching weather data...";
   IconData _weatherIcon = Icons.wb_sunny;
   Color _weatherColor = Colors.orange;
+  String _weatherCity = "";
+  double _temperature = 0.0;
+  bool _isLoadingWeather = true;
 
   @override
   void initState() {
@@ -54,44 +50,50 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _loadDailyContent();
   }
 
-  void _loadDailyContent() {
-    // Random quote
-    setState(() {
-      _currentQuote = _quotes[Random().nextInt(_quotes.length)];
+  void _loadDailyContent() async {
+    WeatherData? weatherData;
 
-      // Mock weather logic (random for demo)
-      final weatherTypes = [
-        {
-          'cond': 'Sunny',
-          'sugg': 'Great day for a walk in nature!',
-          'icon': Icons.wb_sunny,
-          'color': Colors.orange,
-        },
-        {
-          'cond': 'Rainy',
-          'sugg': 'Perfect for reading and cozy journaling.',
-          'icon': Icons.water_drop,
-          'color': Colors.blue,
-        },
-        {
-          'cond': 'Cloudy',
-          'sugg': 'Good time for some deep breathing exercises.',
-          'icon': Icons.cloud,
-          'color': Colors.grey,
-        },
-        {
-          'cond': 'Clear',
-          'sugg': 'Try some stargazing tonight!',
-          'icon': Icons.nightlight_round,
-          'color': Colors.indigo,
-        },
-      ];
-      final weather = weatherTypes[Random().nextInt(weatherTypes.length)];
-      _weatherCondition = weather['cond'] as String;
-      _weatherSuggestion = weather['sugg'] as String;
-      _weatherIcon = weather['icon'] as IconData;
-      _weatherColor = weather['color'] as Color;
+    try {
+      weatherData = await _weatherService.getCurrentWeather();
+      setState(() {
+        _weatherCondition = weatherData!.condition;
+        _weatherSuggestion = weatherData.suggestion;
+        _weatherIcon = weatherData.icon;
+        _weatherColor = weatherData.color;
+        _weatherCity = weatherData.city;
+        _temperature = weatherData.temperature;
+        _isLoadingWeather = false;
+      });
+    } catch (e) {
+      debugPrint('Error loading weather: $e');
+      setState(() {
+        _isLoadingWeather = false;
+      });
+    }
+
+    // Weather- and day-aware quote selection
+    final fallbackQuote = _inspirationService.selectLocalQuote(
+      condition: weatherData?.condition,
+    );
+    setState(() {
+      _currentQuote = fallbackQuote;
     });
+
+    // Try remote inspiration (cached for the day)
+    try {
+      final apiQuote = await _inspirationService.getDailyInspiration(
+        condition: weatherData?.condition,
+        dayOfWeek: DateTime.now().weekday,
+        fallback: fallbackQuote,
+      );
+      if (apiQuote != null && apiQuote.isNotEmpty) {
+        setState(() {
+          _currentQuote = apiQuote;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error fetching inspiration: $e');
+    }
   }
 
   String _getGreeting() {
@@ -101,43 +103,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return 'Good Evening';
   }
 
-  Future<List<String>> getUsernames() async {
-    try {
-      final users = HiveDBService.getAllUsers();
-
-      if (users.isEmpty) {
-        return [];
-      }
-
-      return users
-          .map((user) => user.name.trim() ?? '')
-          .where((name) => name.isNotEmpty)
-          .toList();
-    } catch (e) {
-      debugPrint('Error fetching usernames: $e');
-      return [];
-    }
-  }
-
   Future<void> _initializeChatService() async {
-    final List<String> usernames = await getUsernames();
-
-    final String userName = usernames.isNotEmpty
-        ? usernames.first.split(" ").first
-        : 'User';
-
-    final String fname = usernames.isNotEmpty ? usernames.first : 'User';
+    final fullName = HiveDBService.getFirstUserName() ?? 'User';
+    final userName = fullName.split(" ").first;
 
     setState(() {
       _userName = userName;
-      fullName = fname;
+      this.fullName = fullName;
     });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.green[50],
+      backgroundColor: AppColors.bgGreen,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
@@ -193,7 +172,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               style: GoogleFonts.plusJakartaSans(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
-                color: Colors.green[800],
+                color: AppColors.primaryGreen,
                 letterSpacing: 1,
               ),
             ),
@@ -407,43 +386,87 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ],
       ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: _weatherColor.withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(_weatherIcon, color: _weatherColor, size: 24),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      child: _isLoadingWeather
+          ? Row(
               children: [
+                SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.green[600],
+                  ),
+                ),
+                const SizedBox(width: 16),
                 Text(
-                  '$_weatherCondition • Mood Tip',
+                  'Loading weather...',
                   style: GoogleFonts.plusJakartaSans(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
                     color: Colors.grey[600],
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  _weatherSuggestion,
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 14,
-                    color: Colors.grey[800],
-                    fontWeight: FontWeight.w500,
+              ],
+            )
+          : Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: _weatherColor.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(_weatherIcon, color: _weatherColor, size: 24),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            '$_weatherCondition',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                          if (_weatherCity.isNotEmpty) ...[
+                            Text(
+                              ' • $_weatherCity',
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
+                          const Spacer(),
+                          Text(
+                            '${_temperature.round()}°C',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: _weatherColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        _weatherSuggestion,
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 14,
+                          color: Colors.grey[800],
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
-          ),
-        ],
-      ),
     );
   }
 

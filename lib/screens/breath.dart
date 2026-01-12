@@ -1,5 +1,6 @@
 import 'package:bloom/models/breathing_session.dart';
 import 'package:bloom/services/db_service.dart';
+import 'package:bloom/constants/colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -8,11 +9,13 @@ import 'package:lottie/lottie.dart';
 class FlowerBreathScreen extends StatefulWidget {
   final VoidCallback onComplete;
   final int? durationSeconds;
+  final String technique;
 
   const FlowerBreathScreen({
     super.key,
     required this.onComplete,
     this.durationSeconds,
+    this.technique = "Flower Breathing",
   });
 
   @override
@@ -136,7 +139,7 @@ class _FlowerBreathScreenState extends State<FlowerBreathScreen>
     }
 
     final session = BreathingSession(
-      technique: "Flower Breathing",
+      technique: widget.technique,
       durationSeconds: duration,
       timestamp: DateTime.now(),
       completed: true,
@@ -163,7 +166,14 @@ class _FlowerBreathScreenState extends State<FlowerBreathScreen>
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [const Color(0xFFE8F5E8), const Color(0xFFC8E6C9)],
+            colors: [
+              widget.technique == "Box Breathing"
+                  ? Colors.blue[50]!
+                  : AppColors.bgGreen,
+              widget.technique == "Box Breathing"
+                  ? Colors.blue[100]!
+                  : const Color(0xFFC8E6C9),
+            ],
           ),
         ),
         child: SafeArea(

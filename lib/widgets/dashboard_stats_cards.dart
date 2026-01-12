@@ -376,8 +376,6 @@ class _StatCard extends StatelessWidget {
                         : Icon(icon, color: color, size: 20),
                   ),
 
-                  const SizedBox(width: 12),
-
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
