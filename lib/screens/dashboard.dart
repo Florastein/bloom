@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:bloom/data/mood_data.dart';
 import 'package:bloom/models/mood_log.dart';
 import 'package:bloom/presentation/screens/onboarding_screen.dart';
@@ -26,7 +27,8 @@ class DashboardScreen extends StatefulWidget {
   State<DashboardScreen> createState() => _DashboardScreenState();
 }
 
-class _DashboardScreenState extends State<DashboardScreen> {
+class _DashboardScreenState extends State<DashboardScreen>
+    with WidgetsBindingObserver {
   String _userName = "";
   String fullName = "";
 
@@ -42,51 +44,61 @@ class _DashboardScreenState extends State<DashboardScreen> {
   String _weatherCity = "";
   double _temperature = 0.0;
   bool _isLoadingWeather = true;
+  StreamSubscription<WeatherData>? _weatherSubscription;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _initializeChatService();
+    _startWeatherSubscription();
     _loadDailyContent();
   }
 
-  void _loadDailyContent() async {
-    WeatherData? weatherData;
+  void _startWeatherSubscription() {
+    _weatherSubscription?.cancel();
+    _weatherSubscription = _weatherService.getWeatherStream().listen(
+      (weatherData) {
+        if (mounted) {
+          setState(() {
+            _weatherCondition = weatherData.condition;
+            _weatherSuggestion = weatherData.suggestion;
+            _weatherIcon = weatherData.icon;
+            _weatherColor = weatherData.color;
+            _weatherCity = weatherData.city;
+            _temperature = weatherData.temperature;
+            _isLoadingWeather = false;
+          });
 
-    try {
-      weatherData = await _weatherService.getCurrentWeather();
-      setState(() {
-        _weatherCondition = weatherData!.condition;
-        _weatherSuggestion = weatherData.suggestion;
-        _weatherIcon = weatherData.icon;
-        _weatherColor = weatherData.color;
-        _weatherCity = weatherData.city;
-        _temperature = weatherData.temperature;
-        _isLoadingWeather = false;
-      });
-    } catch (e) {
-      debugPrint('Error loading weather: $e');
-      setState(() {
-        _isLoadingWeather = false;
-      });
-    }
-
-    // Weather- and day-aware quote selection
-    final fallbackQuote = _inspirationService.selectLocalQuote(
-      condition: weatherData?.condition,
+          // Also update quote based on new weather
+          _updateWeatherAwareQuote(weatherData);
+        }
+      },
+      onError: (e) {
+        debugPrint('Weather subscription error: $e');
+        if (mounted) {
+          setState(() => _isLoadingWeather = false);
+        }
+      },
     );
+  }
+
+  void _updateWeatherAwareQuote(WeatherData weatherData) async {
+    final fallbackQuote = _inspirationService.selectLocalQuote(
+      condition: weatherData.condition,
+    );
+
     setState(() {
       _currentQuote = fallbackQuote;
     });
 
-    // Try remote inspiration (cached for the day)
     try {
       final apiQuote = await _inspirationService.getDailyInspiration(
-        condition: weatherData?.condition,
+        condition: weatherData.condition,
         dayOfWeek: DateTime.now().weekday,
         fallback: fallbackQuote,
       );
-      if (apiQuote != null && apiQuote.isNotEmpty) {
+      if (apiQuote != null && apiQuote.isNotEmpty && mounted) {
         setState(() {
           _currentQuote = apiQuote;
         });
@@ -94,6 +106,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
     } catch (e) {
       debugPrint('Error fetching inspiration: $e');
     }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _weatherSubscription?.cancel();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      _weatherSubscription?.cancel();
+    } else if (state == AppLifecycleState.resumed) {
+      _startWeatherSubscription();
+    }
+  }
+
+  void _loadDailyContent() async {
+    // Weather is now handled by the stream subscription.
+    // This method now only handles initial setup if needed,
+    // but most logic is moved to _startWeatherSubscription and _updateWeatherAwareQuote.
   }
 
   String _getGreeting() {
@@ -116,7 +150,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.bgGreen,
+      backgroundColor: AppColors.newBG,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
@@ -127,17 +161,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
               _buildHeader(_userName),
               const SizedBox(height: 30),
 
-              // Welcome card
-              _buildWelcomeCard(context),
+              // Weather Suggestion
+              _buildWeatherSuggestion(),
               const SizedBox(height: 20),
 
               // Daily Quote
               _buildQuoteCard(),
               const SizedBox(height: 20),
 
-              // Weather Suggestion
-              _buildWeatherSuggestion(),
-              const SizedBox(height: 30),
+              // Welcome card
+              _buildWelcomeCard(context),
+              const SizedBox(height: 20),
 
               // Stats cards
               const DashboardStatsCards(),
@@ -170,84 +204,82 @@ class _DashboardScreenState extends State<DashboardScreen> {
             Text(
               'Bloom',
               style: GoogleFonts.plusJakartaSans(
-                fontSize: 24,
+                fontSize: 26,
                 fontWeight: FontWeight.bold,
                 color: AppColors.primaryGreen,
                 letterSpacing: 1,
               ),
             ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // User name on left
+                Container(
+                  decoration: BoxDecoration(
+                    //color: Colors.green[100],
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    "${_getGreeting()}, $_userName",
+                    style: GoogleFonts.plusJakartaSans(
+                      color: Color.fromARGB(195, 51, 51, 51),
+                      fontWeight: FontWeight.w500,
+                      fontSize: 15,
+                    ),
+                  ),
+                ),
+
+                // User icon on right
+              ],
+            ),
           ],
         ),
-
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            // User name on left
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-              decoration: BoxDecoration(
-                //color: Colors.green[100],
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                "${_getGreeting()}, $_userName",
-                style: GoogleFonts.plusJakartaSans(
-                  color: Colors.green[800],
-                  fontWeight: FontWeight.w500,
-                  fontSize: 16,
-                ),
-              ),
-            ),
-
-            // User icon on right
-            GestureDetector(
-              onTap: () {
-                UserDetailsPopup.show(
+        GestureDetector(
+          onTap: () {
+            UserDetailsPopup.show(
+              context: context,
+              userName: fullName,
+              onEditProfile: () {
+                Navigator.of(context).pop();
+                showPopupCard(
                   context: context,
-                  userName: fullName,
-                  onEditProfile: () {
-                    Navigator.of(context).pop();
-                    showPopupCard(
-                      context: context,
-                      builder: (context) {
-                        return PopupCard(
-                          elevation: 8,
-                          color: Colors.yellow,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12.0),
-                          ),
-                          child: const Padding(
-                            padding: EdgeInsets.all(16.0),
-                            child: Text('This is a popup card'),
-                          ),
-                        );
-                      },
-                      offset: const Offset(-16, 70),
-                      alignment: Alignment.center,
-                      useSafeArea: true,
+                  builder: (context) {
+                    return PopupCard(
+                      elevation: 8,
+                      color: Colors.yellow,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12.0),
+                      ),
+                      child: const Padding(
+                        padding: EdgeInsets.all(16.0),
+                        child: Text('This is a popup card'),
+                      ),
                     );
                   },
-                  onSettings: () {
-                    Navigator.of(context).pop();
-                    print('Open Settings');
-                  },
-                  onLogout: () {
-                    Navigator.of(context).pop();
-                    print('Logout user');
-                  },
+                  offset: const Offset(-16, 70),
+                  alignment: Alignment.center,
+                  useSafeArea: true,
                 );
               },
-              child: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: Colors.green[100],
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(Icons.person, color: Colors.green[800], size: 20),
-              ),
+              onSettings: () {
+                Navigator.of(context).pop();
+                print('Open Settings');
+              },
+              onLogout: () {
+                Navigator.of(context).pop();
+                print('Logout user');
+              },
+            );
+          },
+          child: Container(
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(
+              color: Colors.green[100],
+              shape: BoxShape.circle,
             ),
-          ],
+            child: Icon(Icons.person, color: Colors.green[800], size: 28),
+          ),
         ),
       ],
     );
@@ -264,7 +296,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           BoxShadow(
             color: Colors.green.withOpacity(0.1),
             blurRadius: 15,
-            offset: const Offset(0, 5),
+            offset: const Offset(0, 3),
           ),
         ],
       ),
@@ -349,20 +381,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
               Text(
                 'Daily Inspiration',
                 style: GoogleFonts.plusJakartaSans(
-                  fontSize: 14,
+                  fontSize: 18,
                   fontWeight: FontWeight.w600,
                   color: Colors.purple[900],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          Text(
-            _currentQuote,
-            style: GoogleFonts.playfairDisplay(
-              fontSize: 18,
-              fontStyle: FontStyle.italic,
-              color: Colors.purple[800],
+          const SizedBox(height: 6),
+          Padding(
+            padding: const EdgeInsets.only(left: 32.0),
+            child: Text(
+              _currentQuote,
+              style: GoogleFonts.playfairDisplay(
+                fontSize: 18,
+                color: Colors.purple[800],
+              ),
             ),
           ),
         ],
@@ -418,9 +452,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   child: Icon(_weatherIcon, color: _weatherColor, size: 24),
                 ),
                 const SizedBox(width: 16),
-                Expanded(
+                Flexible(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
+
                     children: [
                       Row(
                         children: [
@@ -442,15 +477,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               ),
                             ),
                           ],
-                          const Spacer(),
-                          Text(
-                            '${_temperature.round()}°C',
-                            style: GoogleFonts.plusJakartaSans(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: _weatherColor,
-                            ),
-                          ),
                         ],
                       ),
                       const SizedBox(height: 4),
@@ -461,9 +487,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           color: Colors.grey[800],
                           fontWeight: FontWeight.w500,
                         ),
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ),
+                ),
+                //const Spacer(),
+                Row(
+                  children: [
+                    Text(
+                      '${_temperature.round()}',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 48,
+                        fontWeight: FontWeight.bold,
+                        color: _weatherColor,
+                      ),
+                    ),
+                    Text(
+                      "°C",
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: _weatherColor,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

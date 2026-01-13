@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
@@ -28,7 +29,71 @@ class WeatherService {
       'https://api.openweathermap.org/data/2.5/weather';
 
   static WeatherData? _cachedWeather;
-  static DateTime? _cacheDay;
+  static DateTime? _cacheTimestamp;
+
+  /// Returns a stream of weather updates.
+  /// Emits whenever the location changes significantly (5km) or every hour.
+  Stream<WeatherData> getWeatherStream() async* {
+    // Initial fetch
+    try {
+      yield await getCurrentWeather().timeout(const Duration(seconds: 8));
+    } catch (e) {
+      debugPrint('Initial stream fetch failed: $e');
+      yield _cachedWeather ?? _getFallbackWeather();
+    }
+
+    // Movement-based updates (5km) - Medium accuracy for power optimization
+    final movementStream = Geolocator.getPositionStream(
+      locationSettings: const LocationSettings(
+        accuracy: LocationAccuracy.high,
+        distanceFilter: 5000,
+      ),
+    );
+
+    // Periodic updates (1 hour)
+    final timerStream = Stream.periodic(const Duration(hours: 1));
+
+    await for (final event in _mergeStreams([movementStream, timerStream])) {
+      try {
+        if (event is Position) {
+          debugPrint(
+            'Stream Movement update: ${event.latitude}, ${event.longitude}',
+          );
+        }
+        yield await getCurrentWeather(forceRefresh: true);
+      } catch (_) {}
+    }
+  }
+
+  Stream<dynamic> _mergeStreams(List<Stream> streams) {
+    final controller = StreamController<dynamic>();
+    List<StreamSubscription> subscriptions = [];
+
+    controller.onListen = () {
+      for (final stream in streams) {
+        subscriptions.add(
+          stream.listen(
+            (data) => controller.add(data),
+            onError: (e) => controller.addError(e),
+            onDone: () {
+              if (subscriptions.every((s) => s.isPaused)) {
+                // Not perfect but helps
+              }
+            },
+          ),
+        );
+      }
+    };
+
+    controller.onCancel = () {
+      for (final sub in subscriptions) {
+        sub.cancel();
+      }
+      subscriptions.clear();
+    };
+
+    return controller.stream;
+  }
 
   Future<WeatherData> getCurrentWeather({bool forceRefresh = false}) async {
     try {
@@ -36,33 +101,55 @@ class WeatherService {
         return _cachedWeather!;
       }
 
-      Position position = await _determinePosition();
+      // Try for a fast response first
+      final lastPosition = await Geolocator.getLastKnownPosition();
+      if (lastPosition != null && _cachedWeather == null) {
+        debugPrint(
+          'Last Known GPS Location: ${lastPosition.latitude}, ${lastPosition.longitude}',
+        );
+        // We can do a quick fetch with last known pos if we have no cache
+        _fetchWithPosition(lastPosition)
+            .then((data) {
+              _cachedWeather = data;
+              _cacheTimestamp = DateTime.now();
+            })
+            .catchError((_) {});
+      }
 
-      String cityName = await _getCityName(
-        position.latitude,
-        position.longitude,
+      Position position = await _determinePosition().timeout(
+        const Duration(seconds: 5),
+        onTimeout: () => throw TimeoutException('Location fix took too long'),
       );
 
-      final response = await http
-          .get(
-            Uri.parse(
-              '$_baseUrl?lat=${position.latitude}&lon=${position.longitude}&appid=$_apiKey&units=metric',
-            ),
-          )
-          .timeout(const Duration(seconds: 10));
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        final parsed = _parseWeatherData(data, cityName);
-        _cacheDay = _todayKey();
-        _cachedWeather = parsed;
-        return parsed;
-      } else {
-        throw Exception('Failed to load weather data');
-      }
+      return await _fetchWithPosition(position);
     } catch (e) {
       debugPrint('Error fetching weather: $e');
-      return _getFallbackWeather();
+      return _cachedWeather ?? _getFallbackWeather();
+    }
+  }
+
+  Future<WeatherData> _fetchWithPosition(Position position) async {
+    String cityName = await _getCityName(
+      position.latitude,
+      position.longitude,
+    ).timeout(const Duration(seconds: 3), onTimeout: () => 'Unknown');
+
+    final response = await http
+        .get(
+          Uri.parse(
+            '$_baseUrl?lat=${position.latitude}&lon=${position.longitude}&appid=$_apiKey&units=metric',
+          ),
+        )
+        .timeout(const Duration(seconds: 10));
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      final parsed = _parseWeatherData(data, cityName);
+      _cacheTimestamp = DateTime.now();
+      _cachedWeather = parsed;
+      return parsed;
+    } else {
+      throw Exception('Failed to load weather data');
     }
   }
 
@@ -109,9 +196,14 @@ class WeatherService {
       throw Exception('Location permissions are permanently denied');
     }
 
-    return await Geolocator.getCurrentPosition(
+    // Accuracy optimized for Bloom
+    final position = await Geolocator.getCurrentPosition(
       desiredAccuracy: LocationAccuracy.high,
     );
+    debugPrint(
+      'Current GPS Location: ${position.latitude}, ${position.longitude}',
+    );
+    return position;
   }
 
   /// Gets city name from coordinates
@@ -199,13 +291,9 @@ class WeatherService {
   }
 
   bool _isCacheValid() {
-    if (_cacheDay == null || _cachedWeather == null) return false;
-    return _cacheDay == _todayKey();
-  }
-
-  DateTime _todayKey() {
-    final now = DateTime.now().toUtc();
-    return DateTime.utc(now.year, now.month, now.day);
+    if (_cacheTimestamp == null || _cachedWeather == null) return false;
+    // Valid for 30 minutes in the same session
+    return DateTime.now().difference(_cacheTimestamp!).inMinutes < 30;
   }
 
   /// Returns fallback weather data when API fails

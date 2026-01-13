@@ -156,7 +156,8 @@ class _DashboardStatsCardsState extends State<DashboardStatsCards> {
                 'Your Progress',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w600,
-                  color: Theme.of(context).primaryColor,
+                  color: Color(0XFF333333),
+                  fontSize: 22,
                 ),
               ),
               IconButton(
@@ -189,8 +190,8 @@ class _DashboardStatsCardsState extends State<DashboardStatsCards> {
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               crossAxisCount: 2,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
+              crossAxisSpacing: 6,
+              mainAxisSpacing: 6,
               childAspectRatio: 1.3,
               children: [
                 _StatCard(
@@ -313,7 +314,7 @@ class _StatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
@@ -329,7 +330,8 @@ class _StatCard extends StatelessWidget {
       child: Stack(
         children: [
           Column(
-            mainAxisSize: MainAxisSize.min,
+            mainAxisSize: MainAxisSize.max,
+            mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Value first (emphasis on numbers)
