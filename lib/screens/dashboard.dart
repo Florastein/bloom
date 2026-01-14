@@ -6,6 +6,7 @@ import 'package:bloom/screens/breath.dart';
 import 'package:bloom/screens/chat.dart';
 import 'package:bloom/screens/emergency.dart';
 import 'package:bloom/screens/journal.dart';
+import 'package:bloom/screens/profile_screen.dart';
 import 'package:bloom/screens/userDetails.dart';
 import 'package:bloom/services/db_service.dart';
 import 'package:bloom/services/inspiration_service.dart';
@@ -236,40 +237,9 @@ class _DashboardScreenState extends State<DashboardScreen>
         ),
         GestureDetector(
           onTap: () {
-            UserDetailsPopup.show(
-              context: context,
-              userName: fullName,
-              onEditProfile: () {
-                Navigator.of(context).pop();
-                showPopupCard(
-                  context: context,
-                  builder: (context) {
-                    return PopupCard(
-                      elevation: 8,
-                      color: Colors.yellow,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12.0),
-                      ),
-                      child: const Padding(
-                        padding: EdgeInsets.all(16.0),
-                        child: Text('This is a popup card'),
-                      ),
-                    );
-                  },
-                  offset: const Offset(-16, 70),
-                  alignment: Alignment.center,
-                  useSafeArea: true,
-                );
-              },
-              onSettings: () {
-                Navigator.of(context).pop();
-                print('Open Settings');
-              },
-              onLogout: () {
-                Navigator.of(context).pop();
-                print('Logout user');
-              },
-            );
+            Navigator.of(
+              context,
+            ).push(CupertinoPageRoute(builder: (context) => ProfileScreen()));
           },
           child: Container(
             width: 52,

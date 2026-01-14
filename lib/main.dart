@@ -76,7 +76,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
-      home: /*FutureBuilder<bool>(
+      home: FutureBuilder<bool>(
         future: _checkFirstLaunch(),
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
@@ -89,8 +89,8 @@ class MyApp extends StatelessWidget {
             isChecking: false,
           );
         },
-      ),*/
-          ProfileScreen(),
+      ),
+      //ProfileScreen(),
       debugShowCheckedModeBanner: false,
     );
   }

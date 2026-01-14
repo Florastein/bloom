@@ -503,12 +503,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     const SizedBox(height: 12),
                     _buildSettingsItem(
-                      icon: BootstrapIcons.person_circle,
-                      title: 'Profile Information',
-                      subtitle: _joinDate,
-                      onTap: _editProfileInfo,
-                    ),
-                    _buildSettingsItem(
                       icon: BootstrapIcons.gear,
                       title: 'App Settings',
                       subtitle: 'Notifications, theme, and more',
