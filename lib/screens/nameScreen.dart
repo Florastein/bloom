@@ -278,19 +278,8 @@ class _AnimatedProfileInformationScreenState
       debugPrint(_nameController.text);
       debugPrint(widget.selectedAge);
       debugPrint(widget.selectedGender);
-
-      SmartEdgeAlert.show(
-        context,
-        title: 'Data Saved Successfully',
-        titleFontSize: 20,
-        //description: 'Description',
-        descriptionFontSize: 16,
-        gravity: SmartEdgeAlert.top,
-        closeButtonColor: Colors.white,
-        duration: SmartEdgeAlert.lengthVeryLong,
-      );
     }
-    Navigator.push(
+    Navigator.pushReplacement(
       context,
       CupertinoPageRoute(builder: (context) => DashboardScreen()),
     );

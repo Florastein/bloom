@@ -4,9 +4,11 @@ import 'package:bloom/models/journal_entry.dart';
 import 'package:bloom/models/breathing_session.dart';
 import 'package:bloom/models/mood_log.dart';
 import 'package:bloom/models/user.dart';
+import 'package:bloom/services/notification_service.dart';
 //import 'package:bloom/screens/breath.dart';
 import 'package:bloom/screens/dashboard.dart';
 import 'package:bloom/screens/onboarding_one.dart';
+import 'package:bloom/screens/profile_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -18,7 +20,7 @@ import 'package:bloom/constants/colors.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await _initializeApp(); // ✅ Wait for Firebase + Hive
+  await _initializeApp(); // ✅ Wait for Firebase + Hive + Notifications
   runApp(const MyApp()); // ✅ Run app only after init completes
 }
 
@@ -41,6 +43,15 @@ Future<void> _initializeApp() async {
   // Open boxes for new features with correct types
   await Hive.openBox<JournalEntry>('journal_entries');
   await Hive.openBox<BreathingSession>('breathing_sessions');
+
+  // Initialize notification service
+  await NotificationService.initialize();
+
+  // Request notification permissions and schedule reminders
+  final hasPermission = await NotificationService.requestPermissions();
+  if (hasPermission) {
+    await NotificationService.scheduleDailyMoodReminders();
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -65,7 +76,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
-      home: FutureBuilder<bool>(
+      home: /*FutureBuilder<bool>(
         future: _checkFirstLaunch(),
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
@@ -78,7 +89,8 @@ class MyApp extends StatelessWidget {
             isChecking: false,
           );
         },
-      ),
+      ),*/
+          ProfileScreen(),
       debugShowCheckedModeBanner: false,
     );
   }

@@ -270,6 +270,13 @@ class HiveDBService {
     await box.deleteAt(index);
   }
 
+  /// Get the timestamp of the last mood log
+  static DateTime? getLastMoodLogTime() {
+    final logs = getAllMoodLogs();
+    if (logs.isEmpty) return null;
+    return logs.first.timestamp; // Already sorted DESC
+  }
+
   /// Delete all Hive boxes (optional, similar to delete database)
   static Future<void> deleteAllData() async {
     await Hive.box<ChatMessage>('chat_messages').clear();
